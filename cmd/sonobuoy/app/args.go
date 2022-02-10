@@ -53,6 +53,7 @@ const (
 	retrievePathFlag          = "retrieve-path"
 	securityContextModeFlag   = "security-context-mode"
 	aggregatorPermissionsFlag = "aggregator-permissions"
+	serviceAccountFlag        = "service-account"
 )
 
 // AddNamespaceFlag initialises a namespace flag.
@@ -165,6 +166,13 @@ func AddAggregatorPermissionsFlag(mode *string, flags *pflag.FlagSet) {
 	flags.StringVar(
 		mode, aggregatorPermissionsFlag, "clusterAdmin",
 		"Type of aggregator permission to use in the cluster. Allowable values are [namespaced, clusterAdmin]",
+	)
+}
+
+func AddServiceAccountFlag(mode *string, flags *pflag.FlagSet) {
+	flags.StringVar(
+		mode, serviceAccountFlag, "sonobuoy-serviceaccount",
+		"Service account to be used by sonobuoy.",
 	)
 }
 

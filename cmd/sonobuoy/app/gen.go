@@ -79,6 +79,7 @@ func GenFlagSet(cfg *genFlags, rbac RBACMode) *pflag.FlagSet {
 	AddTimeoutFlag(&cfg.sonobuoyConfig.Aggregation.TimeoutSeconds, genset)
 	AddShowDefaultPodSpecFlag(&cfg.showDefaultPodSpec, genset)
 	AddAggregatorPermissionsFlag(&cfg.sonobuoyConfig.AggregatorPermissions, genset)
+	AddServiceAccountFlag(&cfg.sonobuoyConfig.ServiceAccount, genset)
 
 	AddNamespaceFlag(&cfg.sonobuoyConfig.Namespace, genset)
 	AddDNSNamespaceFlag(&cfg.dnsNamespace, genset)

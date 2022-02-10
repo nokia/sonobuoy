@@ -69,6 +69,7 @@ const (
 	AggregatorPermissionsClusterRead    = "clusterRead"
 	AggregatorPermissionsNamespaceAdmin = "namespaceAdmin"
 	DefaultAggregatorPermissions        = AggregatorPermissionsClusterAdmin
+	DefaultServiceAccount               = "sonobuoy-serviceaccount"
 )
 
 var (
@@ -141,6 +142,7 @@ type Config struct {
 	ImagePullSecrets      string            `json:"ImagePullSecrets" mapstructure:"ImagePullSecrets"`
 	CustomAnnotations     map[string]string `json:"CustomAnnotations,omitempty" mapstructure:"CustomAnnotations"`
 	AggregatorPermissions string            `json:"AggregatorPermissions" mapstructure:"AggregatorPermissions"`
+	ServiceAccount        string            `json:"ServiceAccount" mapstructure:"ServiceAccount"`
 
 	// ProgressUpdatesPort is the port on which the Sonobuoy worker will listen for status updates from its plugin.
 	ProgressUpdatesPort string `json:"ProgressUpdatesPort,omitempty" mapstructure:"ProgressUpdatesPort"`
@@ -312,6 +314,8 @@ func New() *Config {
 	cfg.SecurityContextMode = DefaultSecurityContextMode
 
 	cfg.AggregatorPermissions = DefaultAggregatorPermissions
+
+	cfg.ServiceAccount = DefaultServiceAccount
 
 	return &cfg
 }
