@@ -53,7 +53,7 @@ const (
 	retrievePathFlag          = "retrieve-path"
 	securityContextModeFlag   = "security-context-mode"
 	aggregatorPermissionsFlag = "aggregator-permissions"
-	serviceAccountFlag        = "service-account"
+	serviceAccountNameFlag    = "service-account-name"
 )
 
 // AddNamespaceFlag initialises a namespace flag.
@@ -169,10 +169,18 @@ func AddAggregatorPermissionsFlag(mode *string, flags *pflag.FlagSet) {
 	)
 }
 
-func AddServiceAccountFlag(mode *string, flags *pflag.FlagSet) {
+// AddCreateServiceAccountFlag adds a boolean flag to enable/disable service account creation.
+func AddCreateServiceAccountFlag(flag *bool, flags *pflag.FlagSet) {
+	flags.BoolVar(
+		flag, "create-service-account", false,
+		"If true, create service account, otherwise use pre-created service account.",
+	)
+}
+
+func AddServiceAccountNameFlag(mode *string, flags *pflag.FlagSet) {
 	flags.StringVar(
-		mode, serviceAccountFlag, "sonobuoy-serviceaccount",
-		"Service account to be used by sonobuoy.",
+		mode, serviceAccountNameFlag, "sonobuoy-serviceaccount",
+		"Name of the service account to be used by sonobuoy.",
 	)
 }
 
