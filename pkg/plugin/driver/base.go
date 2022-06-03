@@ -28,6 +28,7 @@ import (
 	kutil "github.com/vmware-tanzu/sonobuoy/pkg/k8s"
 	"github.com/vmware-tanzu/sonobuoy/pkg/plugin/manifest"
 	v1 "k8s.io/api/core/v1"
+	resource "k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -254,6 +255,20 @@ func (b *Base) CreateWorkerContainerDefintion(hostname string, cert *tls.Certifi
 				Name:      "results",
 				ReadOnly:  false,
 				MountPath: resultDir,
+			},
+		},
+		Resources: v1.ResourceRequirements{
+			Limits: v1.ResourceList{
+				//				"cpu":    resource.MustParse(cpuLimit),
+				//				"memory": resource.MustParse(memLimit),
+				"cpu":    resource.MustParse("500m"),
+				"memory": resource.MustParse("512Mi"),
+			},
+			Requests: v1.ResourceList{
+				//				"cpu":    resource.MustParse(cpuReq),
+				//				"memory": resource.MustParse(memReq),
+				"cpu":    resource.MustParse("1"),
+				"memory": resource.MustParse("1Gi"),
 			},
 		},
 	}
