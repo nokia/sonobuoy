@@ -36,6 +36,7 @@ import (
 	manifesthelper "github.com/vmware-tanzu/sonobuoy/pkg/plugin/manifest/helper"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/rbac/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	kuberuntime "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -342,6 +343,20 @@ func generateAggregatorAndService(w io.Writer, cfg *GenConfig) error {
 					{
 						Name:      "SONOBUOY_ADVERTISE_IP",
 						ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "status.podIP"}},
+					},
+				},
+				Resources: corev1.ResourceRequirements{
+					Limits: corev1.ResourceList{
+						//				"cpu":    resource.MustParse(cpuLimit),
+						//				"memory": resource.MustParse(memLimit),
+						"cpu":    resource.MustParse("1"),
+						"memory": resource.MustParse("1Gi"),
+					},
+					Requests: corev1.ResourceList{
+						//				"cpu":    resource.MustParse(cpuReq),
+						//				"memory": resource.MustParse(memReq),
+						"cpu":    resource.MustParse("500m"),
+						"memory": resource.MustParse("512Mi"),
 					},
 				},
 			},
