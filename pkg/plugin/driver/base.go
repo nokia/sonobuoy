@@ -261,8 +261,8 @@ func (b *Base) CreateWorkerContainerDefintion(hostname string, cert *tls.Certifi
 			Limits: v1.ResourceList{
 				//				"cpu":    resource.MustParse(cpuLimit),
 				//				"memory": resource.MustParse(memLimit),
-				"cpu":    resource.MustParse("200m"),
-				"memory": resource.MustParse("200Mi"),
+				"cpu":    resource.MustParse("500m"),
+				"memory": resource.MustParse("500Mi"),
 			},
 			Requests: v1.ResourceList{
 				//				"cpu":    resource.MustParse(cpuReq),
