@@ -366,7 +366,6 @@ func generateAggregatorAndService(w io.Writer, cfg *GenConfig) error {
 			{Name: "sonobuoy-plugins-volume", VolumeSource: corev1.VolumeSource{ConfigMap: &corev1.ConfigMapVolumeSource{LocalObjectReference: corev1.LocalObjectReference{Name: "sonobuoy-plugins-cm"}}}},
 			{Name: "output-volume", VolumeSource: corev1.VolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{}}},
 		},
-		//ServiceAccountName: "sonobuoy-serviceaccount",
 		ServiceAccountName: cfg.Config.ServiceAccountName,
 		Tolerations: []corev1.Toleration{
 			{Key: "kubernetes.io/e2e-evict-taint-key", Operator: corev1.TolerationOpExists},
@@ -606,12 +605,11 @@ func generateRBAC(w io.Writer, cfg *GenConfig) error {
 }
 
 func generateServiceAcct(w io.Writer, cfg *GenConfig) error {
-	if !cfg.CreateServiceAccount {
+	if cfg.Config.ExistingServiceAccount {
 		return nil
 	}
 
 	sa := &corev1.ServiceAccount{}
-	//sa.Name = "sonobuoy-serviceaccount"
 	sa.Name = cfg.Config.ServiceAccountName
 	sa.Namespace = cfg.Config.Namespace
 	sa.Labels = map[string]string{"component": "sonobuoy"}

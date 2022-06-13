@@ -34,26 +34,27 @@ import (
 )
 
 const (
-	namespaceFlag             = "namespace"
-	sonobuoyImageFlag         = "sonobuoy-image"
-	imagePullPolicyFlag       = "image-pull-policy"
-	pluginFlag                = "plugin"
-	timeoutFlag               = "timeout"
-	waitOutputFlag            = "wait-output"
-	customRegistryFlag        = "custom-registry"
-	kubeconfig                = "kubeconfig"
-	kubecontext               = "context"
-	e2eFocusFlag              = "e2e-focus"
-	e2eSkipFlag               = "e2e-skip"
-	e2eParallelFlag           = "e2e-parallel"
-	e2eRegistryConfigFlag     = "e2e-repo-config"
-	e2eRegistryFlag           = "e2e-repo"
-	pluginImageFlag           = "plugin-image"
-	filenameFlag              = "filename"
-	retrievePathFlag          = "retrieve-path"
-	securityContextModeFlag   = "security-context-mode"
-	aggregatorPermissionsFlag = "aggregator-permissions"
-	serviceAccountNameFlag    = "service-account-name"
+	namespaceFlag              = "namespace"
+	sonobuoyImageFlag          = "sonobuoy-image"
+	imagePullPolicyFlag        = "image-pull-policy"
+	pluginFlag                 = "plugin"
+	timeoutFlag                = "timeout"
+	waitOutputFlag             = "wait-output"
+	customRegistryFlag         = "custom-registry"
+	kubeconfig                 = "kubeconfig"
+	kubecontext                = "context"
+	e2eFocusFlag               = "e2e-focus"
+	e2eSkipFlag                = "e2e-skip"
+	e2eParallelFlag            = "e2e-parallel"
+	e2eRegistryConfigFlag      = "e2e-repo-config"
+	e2eRegistryFlag            = "e2e-repo"
+	pluginImageFlag            = "plugin-image"
+	filenameFlag               = "filename"
+	retrievePathFlag           = "retrieve-path"
+	securityContextModeFlag    = "security-context-mode"
+	aggregatorPermissionsFlag  = "aggregator-permissions"
+	serviceAccountNameFlag     = "service-account-name"
+	existingServiceAccountFlag = "existing-service-account"
 )
 
 // AddNamespaceFlag initialises a namespace flag.
@@ -169,17 +170,17 @@ func AddAggregatorPermissionsFlag(mode *string, flags *pflag.FlagSet) {
 	)
 }
 
-// AddCreateServiceAccountFlag adds a boolean flag to enable/disable service account creation.
-func AddCreateServiceAccountFlag(flag *bool, flags *pflag.FlagSet) {
+// AddExistingServiceAccountFlag adds a boolean flag which disables service account creation.
+func AddExistingServiceAccountFlag(flag *bool, flags *pflag.FlagSet) {
 	flags.BoolVar(
-		flag, "create-service-account", false,
-		"If true, create service account, otherwise use pre-created service account.",
+		flag, existingServiceAccountFlag, false,
+		"If true, use an existing service account, else attempt to create one.",
 	)
 }
 
-func AddServiceAccountNameFlag(mode *string, flags *pflag.FlagSet) {
+func AddServiceAccountNameFlag(name *string, flags *pflag.FlagSet) {
 	flags.StringVar(
-		mode, serviceAccountNameFlag, "sonobuoy-serviceaccount",
+		name, serviceAccountNameFlag, "sonobuoy-serviceaccount",
 		"Name of the service account to be used by sonobuoy.",
 	)
 }

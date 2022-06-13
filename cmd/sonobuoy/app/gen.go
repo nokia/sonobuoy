@@ -47,11 +47,10 @@ type genFlags struct {
 
 	// These values are mainly for `run` but we want `gen` to support all the same
 	// flags so you can just swap out gen/run.
-	skipPreflight        bool
-	wait                 int
-	waitOutput           WaitOutputMode
-	genFile              string
-	createServiceAccount bool
+	skipPreflight bool
+	wait          int
+	waitOutput    WaitOutputMode
+	genFile       string
 
 	// plugins will keep a list of the plugins we want. Custom type for
 	// flag support.
@@ -80,8 +79,8 @@ func GenFlagSet(cfg *genFlags, rbac RBACMode) *pflag.FlagSet {
 	AddTimeoutFlag(&cfg.sonobuoyConfig.Aggregation.TimeoutSeconds, genset)
 	AddShowDefaultPodSpecFlag(&cfg.showDefaultPodSpec, genset)
 	AddAggregatorPermissionsFlag(&cfg.sonobuoyConfig.AggregatorPermissions, genset)
-	AddCreateServiceAccountFlag(&cfg.createServiceAccount, genset)
 	AddServiceAccountNameFlag(&cfg.sonobuoyConfig.ServiceAccountName, genset)
+	AddExistingServiceAccountFlag(&cfg.sonobuoyConfig.ExistingServiceAccount, genset)
 
 	AddNamespaceFlag(&cfg.sonobuoyConfig.Namespace, genset)
 	AddDNSNamespaceFlag(&cfg.dnsNamespace, genset)
@@ -163,18 +162,17 @@ func (g *genFlags) Config() (*client.GenConfig, error) {
 	}
 
 	return &client.GenConfig{
-		Config:               &g.sonobuoyConfig.Config,
-		CreateServiceAccount: g.createServiceAccount,
-		EnableRBAC:           rbacEnabled,
-		ImagePullPolicy:      g.sonobuoyConfig.ImagePullPolicy,
-		SSHKeyPath:           g.sshKeyPath,
-		DynamicPlugins:       g.plugins.DynamicPlugins,
-		StaticPlugins:        g.plugins.StaticPlugins,
-		PluginEnvOverrides:   g.pluginEnvs,
-		ShowDefaultPodSpec:   g.showDefaultPodSpec,
-		NodeSelectors:        g.nodeSelectors,
-		KubeVersion:          k8sVersion,
-		PluginTransforms:     g.pluginTransforms,
+		Config:             &g.sonobuoyConfig.Config,
+		EnableRBAC:         rbacEnabled,
+		ImagePullPolicy:    g.sonobuoyConfig.ImagePullPolicy,
+		SSHKeyPath:         g.sshKeyPath,
+		DynamicPlugins:     g.plugins.DynamicPlugins,
+		StaticPlugins:      g.plugins.StaticPlugins,
+		PluginEnvOverrides: g.pluginEnvs,
+		ShowDefaultPodSpec: g.showDefaultPodSpec,
+		NodeSelectors:      g.nodeSelectors,
+		KubeVersion:        k8sVersion,
+		PluginTransforms:   g.pluginTransforms,
 	}, nil
 }
 
