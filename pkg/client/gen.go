@@ -349,7 +349,7 @@ func generateAggregatorAndService(w io.Writer, cfg *GenConfig) error {
 					Limits: corev1.ResourceList{
 						//				"cpu":    resource.MustParse(cpuLimit),
 						//				"memory": resource.MustParse(memLimit),
-						"cpu":    resource.MustParse("500m"),
+						"cpu":    resource.MustParse("1"),
 						"memory": resource.MustParse("500Mi"),
 					},
 					Requests: corev1.ResourceList{
