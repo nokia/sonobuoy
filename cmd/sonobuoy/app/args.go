@@ -37,6 +37,7 @@ const (
 	namespaceFlag              = "namespace"
 	sonobuoyImageFlag          = "sonobuoy-image"
 	imagePullPolicyFlag        = "image-pull-policy"
+	forceImagePullPolicyFlag   = "force-image-pull-policy"
 	pluginFlag                 = "plugin"
 	timeoutFlag                = "timeout"
 	waitOutputFlag             = "wait-output"
@@ -166,7 +167,7 @@ func AddSecurityContextMode(mode *string, flags *pflag.FlagSet) {
 func AddAggregatorPermissionsFlag(mode *string, flags *pflag.FlagSet) {
 	flags.StringVar(
 		mode, aggregatorPermissionsFlag, "clusterAdmin",
-		"Type of aggregator permission to use in the cluster. Allowable values are [namespaced, clusterAdmin]",
+		"Type of aggregator permission to use in the cluster. Allowable values are [namespaceAdmin, clusterRead, clusterAdmin]",
 	)
 }
 
@@ -356,11 +357,20 @@ func AddWaitOutputFlag(mode *WaitOutputMode, flags *pflag.FlagSet, defaultMode W
 		"Specify the type of output Sonobuoy should produce when --wait is used. Valid modes are silent, spinner, or progress")
 }
 
-// AddImagePullPolicyFlag adds a boolean flag for deleting everything (including E2E tests).
+// AddImagePullPolicyFlag adds a string flag for the image pull policy for the aggregator/worker. If ForceImagePullPolicy
+// is set, it will also apply to the plugins.
 func AddImagePullPolicyFlag(policy *string, flags *pflag.FlagSet) {
 	flags.StringVar(
 		policy, imagePullPolicyFlag, config.DefaultSonobuoyPullPolicy,
-		fmt.Sprintf("Set the ImagePullPolicy for the Sonobuoy image and all plugins. Valid options are %s.", strings.Join(ValidPullPolicies(), ", ")),
+		fmt.Sprintf("Set the ImagePullPolicy for the Sonobuoy image and all plugins (if --%v is set). Valid options are %s.", forceImagePullPolicyFlag, strings.Join(ValidPullPolicies(), ", ")),
+	)
+}
+
+// AddForceImagePullPolicyFlag adds a boolean flag for applying the ImagePullPolicy to all plugins even if set in their
+// plugin specification.
+func AddForceImagePullPolicyFlag(apply *bool, flags *pflag.FlagSet) {
+	flags.BoolVar(
+		apply, forceImagePullPolicyFlag, false, "Force plugins' imagePullPolicy to match the value for the Sonobuoy pod",
 	)
 }
 

@@ -52,6 +52,10 @@ more about the new release cycles in [our blog][decoupling-sonobuoy-k8s].
 
    Move the extracted `sonobuoy` executable to somewhere on your `PATH`.
 
+## CLI Documentation
+
+The full documentation for the CLI can be found [here][clidocs].
+
 ## Getting Started
 
 To launch conformance tests (ensuring [CNCF][cncf] conformance) and wait until they are finished run:
@@ -195,7 +199,7 @@ details [here][issue1388]. The simplest way to avoid this is to update your vers
 
 ## Strategy Document
 
-See our current [strategy document][strategy] for context on what our highest priority use cases and work items
+See our current [strategy document][strategy] and [roadmap][roadmap] for context on what our highest priority use cases and work items
 will be. Feel free to make comments on Github or start conversations in Slack.
 
 ## Contributing
@@ -264,3 +268,8 @@ See [the list of releases][releases] to find out about feature changes.
 [strategy]: strategy
 
 [aggregator-permissions]: aggregator-permissions
+
+[clidocs]: cli/sonobuoy
+
+[roadmap]: https://github.com/vmware-tanzu/sonobuoy/wiki/Roadmap
+

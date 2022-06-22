@@ -28,7 +28,7 @@ IMAGE_BRANCH=$(git rev-parse --abbrev-ref HEAD | sed 's/\///g')
 GIT_REF_LONG=$(git rev-parse --verify HEAD)
 
 BUILDMNT=/go/src/$GOTARGET
-BUILD_IMAGE=golang:1.16
+BUILD_IMAGE=golang:1.18
 AMD_IMAGE=gcr.io/distroless/static:nonroot
 ARM_IMAGE=gcr.io/distroless/static:nonroot-arm64
 PPC64LE_IMAGE=gcr.io/distroless/static:nonroot-ppc64le
@@ -36,6 +36,8 @@ S390X_IMAGE=gcr.io/distroless/static:nonroot-s390x
 WIN_AMD64_BASEIMAGE=mcr.microsoft.com/windows/nanoserver
 TEST_IMAGE=testimage:v0.1
 KIND_CLUSTER=kind
+
+SCRIPT_DIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]:-$0}"; )" &> /dev/null && pwd 2> /dev/null; )"
 
 unit_local() {
     go test ${VERBOSE:+-v} -timeout 60s -coverprofile=coverage.txt -covermode=atomic $GOTARGET/cmd/... $GOTARGET/pkg/...
@@ -219,12 +221,13 @@ push_images() {
         docker push "$REGISTRY/$TARGET:$arch-$IMAGE_BRANCH"
         docker push "$REGISTRY/$TARGET:$arch-$IMAGE_VERSION"
     done
-    
+
     export REGISTRY_AUTH_FILE=$(pwd)/auth.json
-    skopeo login --username $DOCKERHUB_USER --password $DOCKERHUB_TOKEN registry.hub.docker.com/$DOCKERHUB_USER
+    skopeo login --username $DOCKERHUB_USER --password $DOCKERHUB_TOKEN registry.hub.docker.com/$REGISTRY
+
     for VERSION in "${WINVERSIONS[@]}"; do
-        skopeo copy docker-archive://$(pwd)/build/windows/$WIN_ARCH/$VERSION/sonobuoy-img-win-$WIN_ARCH-$VERSION-$GITHUB_RUN_ID.tar "docker://registry.hub.docker.com/$REGISTRY/$TARGET:win-$WIN_ARCH-$VERSION-$IMAGE_BRANCH"
-        skopeo copy docker-archive://$(pwd)/build/windows/$WIN_ARCH/$VERSION/sonobuoy-img-win-$WIN_ARCH-$VERSION-$GITHUB_RUN_ID.tar "docker://registry.hub.docker.com/$REGISTRY/$TARGET:win-$WIN_ARCH-$VERSION-$IMAGE_VERSION"
+        skopeo --debug copy docker-archive://$(pwd)/build/windows/$WIN_ARCH/$VERSION/sonobuoy-img-win-$WIN_ARCH-$VERSION-$GITHUB_RUN_ID.tar "docker://registry.hub.docker.com/$REGISTRY/$TARGET:win-$WIN_ARCH-$VERSION-$IMAGE_BRANCH"
+        skopeo --debug copy docker-archive://$(pwd)/build/windows/$WIN_ARCH/$VERSION/sonobuoy-img-win-$WIN_ARCH-$VERSION-$GITHUB_RUN_ID.tar "docker://registry.hub.docker.com/$REGISTRY/$TARGET:win-$WIN_ARCH-$VERSION-$IMAGE_VERSION"
     done
 }
 
@@ -360,6 +363,10 @@ load_test_images_into_cluster(){
 # tests so this will also build sonobuoy locally. A kind cluster won't be necessary.
 update_local() {
     set -x
+    # Download linux kubectl and move into default path for tests
+    curl --output ./kubectl https://storage.googleapis.com/kubernetes-release/release/v1.23.0/bin/linux/amd64/kubectl
+    chmod +x ./kubectl
+
     # Redirect output so we can avoid clutter where go is telling us where -update
     # is not defined. Just printing out the packages at the end.
     go test $GOTARGET/cmd/... $GOTARGET/pkg/... -update > tmp_update.out
@@ -372,4 +379,16 @@ update_local() {
     # Integration tests take longer and need kind (usually). Just run the test we need.
     go test $GOTARGET/test/integration -update -v -tags integration -run 'Golden'
     set +x
+}
+
+update_cli_docs() {
+  output="$SCRIPT_DIR/../site/content/docs/main/cli"
+  echo "Using sonobuoy at ./sonobuoy to generate docs and place them at ${output}"
+  echo "Building sonobuoy for local machine to gen cli docs..."
+  native
+  echo "Removing old cli docs from main..."
+  rm -rf "${output}"
+  mkdir -p "${output}"
+  echo "Generating new docs..."
+  ./sonobuoy gen cli "${output}"
 }

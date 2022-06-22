@@ -125,6 +125,7 @@ func mustRunSonobuoyCommandWithContext(ctx context.Context, t *testing.T, ns, ar
 		} else {
 			t.Logf("Checked sonobuoy logs, got: %v", o.String())
 		}
+		t.FailNow()
 	}
 
 	return stdout
@@ -283,6 +284,23 @@ func TestRetrieveAndExtractWithPodLogs(t *testing.T) {
 	}
 }
 
+// checkTarballForPluginLogs lists files in the tarball and checks for the e2e logs+worker logs.
+// Using the e2e plugin in quick mode seems to be a better check for this than our test image.
+func checkTarballForE2ELogs(t *testing.T, tarball string) {
+	b, err := runCommandWithContext(context.Background(), t, "tar", "-t -f"+tarball)
+	if err != nil {
+		t.Fatalf("Failed to list tarball contents to check for logs: %v %v", err, b.String())
+	}
+	pluginLogsRE := regexp.MustCompile(`podlogs/.*/e2e\.txt`)
+	workerLogsRE := regexp.MustCompile(`podlogs/.*/sonobuoy-worker\.txt`)
+	if !pluginLogsRE.MatchString(b.String()) {
+		t.Errorf("Failed to find plugin logs for e2e plugin in tarball %v", tarball)
+	}
+	if !workerLogsRE.MatchString(b.String()) {
+		t.Errorf("Failed to find worker logs for e2e plugin in tarball %v", tarball)
+	}
+}
+
 // TestCustomResultsDir tests that resultsDir is respected in plugins (job and ds) and
 // and we are able to still retrieve/read results from the aggregator.
 func TestCustomResultsDir(t *testing.T) {
@@ -323,6 +341,64 @@ func TestQuick(t *testing.T) {
 	tb = saveToArtifacts(t, tb)
 
 	checkTarballPluginForErrors(t, tb, "e2e", 0)
+
+	t.Run("Ensure pod and worker logs gathered", func(t *testing.T) {
+		checkTarballForE2ELogs(t, tb)
+	})
+}
+
+// TestQuickLegacyFix runs a real "--mode quick" check against the cluster with the yaml from v0.54.0
+// which suffered from issues with agreement regarding ResultsDir.
+func TestQuickLegacyFix(t *testing.T) {
+	t.Parallel()
+	ctx, cancel := context.WithTimeout(context.Background(), defaultTestTimeout)
+	defer cancel()
+
+	// Hardcoded namespace due to nature of test being from a file.
+	ns, cleanup := getNamespace(t)
+	// Doing a deletion check here rather than as a separate test so-as not to waste the extra compute time.
+	defer func(t *testing.T, ns string) {
+		if err := deleteComplete(t, ns); err != nil {
+			t.Fatalf("Failed to completely delete resources: %v", err)
+		}
+	}(t, ns)
+	defer cleanup(true)
+
+	// Get and modify data so it targets the right sonobuoy image and namespace.
+	runData, err := ioutil.ReadFile("./testdata/issue1688.yaml")
+	if err != nil {
+		t.Fatalf("Failed to read run data file: %v", err)
+	}
+
+	tmpfile, err := ioutil.TempFile("", "")
+	if err != nil {
+		t.Fatalf("Failed to create necessary tmpfile: %v", err)
+	}
+
+	curVersion := mustRunSonobuoyCommandWithContext(context.Background(), t, ns, "version --short")
+	imgName := strings.TrimSpace(fmt.Sprintf("sonobuoy/sonobuoy:%v", curVersion.String()))
+	runData = bytes.ReplaceAll(runData, []byte("REPLACE_NS"), []byte(ns))
+	runData = bytes.ReplaceAll(runData, []byte("REPLACE_IMAGE"), []byte(imgName))
+
+	if _, err := tmpfile.Write(runData); err != nil {
+		t.Fatalf("Failed to rewrite test data as needed for 1688 test: %v", err)
+	}
+	if err := tmpfile.Close(); err != nil {
+		t.Fatalf("Failed to close tmpfile: %v", err)
+	}
+
+	// Use kubectl to apply the run so that we don't have the CLI modifying the data.
+	args := fmt.Sprintf("apply -f %v", tmpfile.Name())
+	if out, err := runCommandWithContext(context.TODO(), t, kubectl, args); err != nil {
+		t.Fatalf("Failed to launch run for 1688: %v %v", err, out.String())
+	}
+
+	// Now we can use sonobuoy to wait for results.
+	mustRunSonobuoyCommandWithContext(ctx, t, ns, fmt.Sprintf("wait -n %v", ns))
+
+	checkStatusForPluginErrors(ctx, t, ns, "e2ecustom", 0)
+	tb := mustDownloadTarball(ctx, t, ns)
+	tb = saveToArtifacts(t, tb)
 }
 
 // deleteComplete is the logic that checks that we deleted the namespace and our clusterRole[Bindings]
@@ -422,6 +498,7 @@ func checkTarballPluginForErrors(t *testing.T, tarball, plugin string, failCount
 }
 
 func saveToArtifacts(t *testing.T, p string) (newPath string) {
+	p = strings.TrimSpace(p)
 	artifactsDir := os.Getenv("ARTIFACTS_DIR")
 	if artifactsDir == "" {
 		t.Logf("Skipping saving artifact %v since ARTIFACTS_DIR is unset.", p)
@@ -439,7 +516,7 @@ func saveToArtifacts(t *testing.T, p string) (newPath string) {
 	var stdout, stderr bytes.Buffer
 
 	// Shell out to `mv` instead of using os.Rename(); the latter caused a problem due to files being on different devices.
-	cmd := exec.CommandContext(context.Background(), bash, "-c", fmt.Sprintf("mv -r %v %v", origFile, artifactFile))
+	cmd := exec.CommandContext(context.Background(), bash, "-c", fmt.Sprintf("mv %v %v", origFile, artifactFile))
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 
@@ -733,6 +810,14 @@ func TestExactOutput_LocalGolden(t *testing.T) {
 			desc:       "sonobuoy plugin-env supports aggregator",
 			cmdLine:    "gen --plugin-env=sonobuoy.FOO=bar --kubernetes-version=ignore",
 			expectFile: "testdata/gen-plugin-env-sonobuoy.golden",
+		}, {
+			desc:       "sonobuoy respects plugin imagePullPolicy",
+			cmdLine:    "gen --kubernetes-version=ignore -p testdata/plugins/good/setImagePullPolicy.yaml",
+			expectFile: "testdata/gen-imagePullPolicy.golden",
+		}, {
+			desc:       "sonobuoy respects plugin imagePullPolicy unless forced via config",
+			cmdLine:    "gen --kubernetes-version=ignore -p testdata/plugins/good/setImagePullPolicy.yaml --force-image-pull-policy",
+			expectFile: "testdata/gen-imagePullPolicy-forced.golden",
 		},
 	}
 	for _, tc := range testCases {

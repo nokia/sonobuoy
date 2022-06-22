@@ -17,6 +17,7 @@ limitations under the License.
 package app
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -24,7 +25,6 @@ import (
 	"github.com/vmware-tanzu/sonobuoy/pkg/client"
 	"github.com/vmware-tanzu/sonobuoy/pkg/client/results"
 	"github.com/vmware-tanzu/sonobuoy/pkg/errlog"
-	"github.com/vmware-tanzu/sonobuoy/pkg/plugin"
 	"github.com/vmware-tanzu/sonobuoy/pkg/plugin/driver"
 	"github.com/vmware-tanzu/sonobuoy/pkg/plugin/manifest"
 	manifesthelper "github.com/vmware-tanzu/sonobuoy/pkg/plugin/manifest/helper"
@@ -37,10 +37,8 @@ import (
 )
 
 const (
-	defaultPluginName    = "plugin"
-	defaultPluginDriver  = "Job"
-	defaultMountName     = "results"
-	defaultMountReadOnly = false
+	defaultPluginName   = "plugin"
+	defaultPluginDriver = "Job"
 )
 
 // GenPluginDefConfig are the input options for running
@@ -129,6 +127,16 @@ func NewCmdGenPluginDef() *cobra.Command {
 		`Specifies files to read and add as configMaps. Will be mounted to the plugin at /tmp/sonobuoy/configs/<filename>.`,
 	)
 
+	genPluginSet.StringVarP(
+		&genPluginOpts.def.SonobuoyConfig.Description, "description", "D", "",
+		"Description for the plugin",
+	)
+
+	genPluginSet.StringVarP(
+		&genPluginOpts.def.SonobuoyConfig.SourceURL, "url", "u", "",
+		"URL for the plugin",
+	)
+
 	AddShowDefaultPodSpecFlag(&genPluginOpts.showDefaultPodSpec, genPluginSet)
 
 	cmd.Flags().AddFlagSet(genPluginSet)
@@ -143,13 +151,6 @@ func defaultManifest() manifest.Manifest {
 	m := manifest.Manifest{}
 	m.Spec.Name = defaultPluginName
 	m.SonobuoyConfig.Driver = defaultPluginDriver
-	m.Spec.VolumeMounts = []v1.VolumeMount{
-		{
-			MountPath: plugin.ResultsDir,
-			Name:      defaultMountName,
-			ReadOnly:  defaultMountReadOnly,
-		},
-	}
 	return m
 }
 
@@ -163,13 +164,13 @@ func genPluginDefWrapper(cfg *GenPluginDefConfig) func(cmd *cobra.Command, args 
 			errlog.LogError(err)
 			os.Exit(1)
 		}
-		fmt.Println(string(s))
+		fmt.Println(s)
 	}
 }
 
 // genPluginDef returns the YAML for the plugin which Sonobuoy would expect as
 // a configMap in order to run/gen a typical run.
-func genPluginDef(cfg *GenPluginDefConfig) ([]byte, error) {
+func genPluginDef(cfg *GenPluginDefConfig) (string, error) {
 	// Copy the validated value to the actual field.
 	cfg.def.SonobuoyConfig.Driver = cfg.driver.String()
 
@@ -202,7 +203,7 @@ func genPluginDef(cfg *GenPluginDefConfig) ([]byte, error) {
 	for _, v := range cfg.configMapFiles {
 		fData, err := os.ReadFile(v)
 		if err != nil {
-			return nil, errors.Wrapf(err, "failed to read file %q", v)
+			return "", errors.Wrapf(err, "failed to read file %q", v)
 		}
 		base := filepath.Base(v)
 		cfg.def.ConfigMap[base] = string(fData)
@@ -211,11 +212,11 @@ func genPluginDef(cfg *GenPluginDefConfig) ([]byte, error) {
 	// Ensure a config with this plugin would validate
 	gc := client.GenConfig{StaticPlugins: []*manifest.Manifest{&cfg.def}}
 	if err := gc.Validate(); err != nil {
-		return nil, errors.Wrap(err, "plugin failed validation")
+		return "", errors.Wrap(err, "plugin failed validation")
 	}
 
 	yaml, err := kuberuntime.Encode(manifest.Encoder, &cfg.def)
-	return yaml, errors.Wrap(err, "serializing as YAML")
+	return prettifyPlugin(yaml), errors.Wrap(err, "serializing as YAML")
 }
 
 func NewCmdGenE2E() *cobra.Command {
@@ -257,7 +258,7 @@ func genManifestForPlugin(genflags *genFlags, pluginName string) func(cmd *cobra
 				if err != nil {
 					return errors.Wrap(err, "error attempting to serialize plugin")
 				}
-				fmt.Print(string(yaml))
+				fmt.Print(prettifyPlugin(yaml))
 			}
 		}
 		return nil
@@ -274,4 +275,11 @@ func NewCmdGenSystemdLogs() *cobra.Command {
 	}
 	cmd.Flags().AddFlagSet(GenFlagSet(&genSystemdLogsflags, EnabledRBACMode))
 	return cmd
+}
+
+// prettifyPlugin just apply any repeated modifications we want to make to the default
+// serialization.
+func prettifyPlugin(b []byte) string {
+	emptyResource := []byte("  resources: {}\n")
+	return string(bytes.ReplaceAll(b, emptyResource, nil))
 }

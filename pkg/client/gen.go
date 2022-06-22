@@ -29,6 +29,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/vmware-tanzu/sonobuoy/pkg/config"
+	"github.com/vmware-tanzu/sonobuoy/pkg/discovery"
 	"github.com/vmware-tanzu/sonobuoy/pkg/errlog"
 	kutil "github.com/vmware-tanzu/sonobuoy/pkg/k8s"
 	"github.com/vmware-tanzu/sonobuoy/pkg/plugin/driver"
@@ -136,10 +137,11 @@ func (*SonobuoyClient) GenerateManifestAndPlugins(cfg *GenConfig) ([]byte, []*ma
 		return strings.ToLower(plugins[i].SonobuoyConfig.PluginName) < strings.ToLower(plugins[j].SonobuoyConfig.PluginName)
 	})
 
-	// Apply our universal transforms; only applies to ImagePullPolicy. Overrides all
-	// plugin values.
+	// Apply our universal transforms; only override defaultImagePullPolicy if desired.
 	for _, p := range plugins {
-		p.Spec.ImagePullPolicy = corev1.PullPolicy(cfg.Config.ImagePullPolicy)
+		if cfg.Config.ForceImagePullPolicy {
+			p.Spec.ImagePullPolicy = corev1.PullPolicy(cfg.Config.ImagePullPolicy)
+		}
 	}
 
 	// Apply transforms. Ensure this is before handling configmaps and applying the k8s_version.
@@ -171,6 +173,16 @@ func (*SonobuoyClient) GenerateManifestAndPlugins(cfg *GenConfig) ([]byte, []*ma
 					}},
 				},
 			})
+		// Sidecars get mounts too so that they can leverage the feature too.
+		if p.PodSpec != nil {
+			for i := range p.PodSpec.Containers {
+				p.PodSpec.Containers[i].VolumeMounts = append(p.PodSpec.Containers[i].VolumeMounts,
+					corev1.VolumeMount{
+						Name:      fmt.Sprintf("sonobuoy-%v-vol", p.SonobuoyConfig.PluginName),
+						MountPath: sonobuoyDefaultConfigDir,
+					})
+			}
+		}
 		p.Spec.VolumeMounts = append(p.Spec.VolumeMounts,
 			corev1.VolumeMount{
 				Name:      fmt.Sprintf("sonobuoy-%v-vol", p.SonobuoyConfig.PluginName),
@@ -185,7 +197,7 @@ func (*SonobuoyClient) GenerateManifestAndPlugins(cfg *GenConfig) ([]byte, []*ma
 	}
 
 	cfg.PluginEnvOverrides, plugins = applyAutoEnvVars(cfg.KubeVersion, cfg.Config.ResultsDir, cfg.Config.ProgressUpdatesPort, cfg.PluginEnvOverrides, plugins)
-	autoAttachResultsDir(plugins, cfg.Config.ResultsDir)
+	discovery.AutoAttachResultsDir(plugins, cfg.Config.ResultsDir)
 	if err := applyEnvOverrides(cfg.PluginEnvOverrides, plugins); err != nil {
 		return nil, nil, err
 	}
@@ -675,39 +687,6 @@ func processEnvVals(envVars map[string]string) ([]corev1.EnvVar, map[string]stru
 	return newEnv, removeVals
 }
 
-// autoAttachResultsDir will either add the volumemount for the results dir or modify the existing
-// one to have the right path set.
-func autoAttachResultsDir(plugins []*manifest.Manifest, resultsDir string) {
-	for pluginIndex := range plugins {
-		containers := []*corev1.Container{&plugins[pluginIndex].Spec.Container}
-		if plugins[pluginIndex].PodSpec != nil {
-			for containerIndex := range plugins[pluginIndex].PodSpec.Containers {
-				containers = append(containers, &plugins[pluginIndex].PodSpec.Containers[containerIndex])
-			}
-		}
-		addOrUpdateResultsMount(resultsDir, containers...)
-	}
-}
-
-func addOrUpdateResultsMount(resultsDir string, containers ...*corev1.Container) {
-	for ci := range containers {
-		foundOnPlugin := false
-		for vmi, vm := range containers[ci].VolumeMounts {
-			if vm.Name == "results" {
-				containers[ci].VolumeMounts[vmi].MountPath = resultsDir
-				foundOnPlugin = true
-				break
-			}
-		}
-		if !foundOnPlugin {
-			containers[ci].VolumeMounts = append(containers[ci].VolumeMounts, corev1.VolumeMount{
-				Name:      "results",
-				MountPath: resultsDir,
-			})
-		}
-	}
-}
-
 func applyAutoEnvVars(imageVersion, resultsDir, progressPort string, env map[string]map[string]string, plugins []*manifest.Manifest) (map[string]map[string]string, []*manifest.Manifest) {
 	// Set env on all plugins and swap out dynamic images.
 	if env == nil {
@@ -786,6 +765,7 @@ func SystemdLogsManifest(cfg *GenConfig) *manifest.Manifest {
 	// systemd-logs only makes sense on linux.
 	// TODO(jschnake): Instead of systemd-logs, make an os-agnostic log gathering plugin.
 	m.PodSpec.PodSpec.NodeSelector = map[string]string{"kubernetes.io/os": "linux"}
+
 	return m
 }
 
