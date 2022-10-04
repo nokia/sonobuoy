@@ -184,7 +184,7 @@ func (b *Base) workerEnvironment(hostname string, cert *tls.Certificate, progres
 		},
 		{
 			Name:  "AGGREGATOR_URL",
-			Value: hostname,
+			Value: hostname, // https://sonobuoy-aggregator:8080
 		},
 		{
 			Name:  "CA_CERT",

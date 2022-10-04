@@ -89,8 +89,8 @@ func LoadConfig(pathsToTry ...string) (*Config, error) {
 func (cfg *Config) Resolve() {
 	// Figure out what address we will tell pods to dial for aggregation
 	if cfg.Aggregation.AdvertiseAddress == "" {
-		if ip := os.Getenv("SONOBUOY_ADVERTISE_IP"); ip != "" {
-			cfg.Aggregation.AdvertiseAddress = fmt.Sprintf("[%v]:%d", ip, cfg.Aggregation.BindPort)
+		if svcName := os.Getenv("SONOBUOY_AGGREGATOR_SERVICE_NAME"); svcName != "" {
+			cfg.Aggregation.AdvertiseAddress = fmt.Sprintf("[%v]:%d", svcName, cfg.Aggregation.BindPort)
 		} else {
 			hostname, _ := os.Hostname()
 			if hostname != "" {

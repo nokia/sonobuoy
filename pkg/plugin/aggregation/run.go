@@ -113,7 +113,7 @@ func Run(client kubernetes.Interface, plugins []plugin.Interface, cfg plugin.Agg
 	}()
 
 	// AdvertiseAddress often has a port, split this off if so
-	advertiseAddress := cfg.AdvertiseAddress
+	advertiseAddress := cfg.AdvertiseAddress // sonobuoy-aggregator:8080
 	if host, _, err := net.SplitHostPort(cfg.AdvertiseAddress); err == nil {
 		advertiseAddress = host
 	}
@@ -249,6 +249,7 @@ func (a *Aggregator) RunAndMonitorPlugin(ctx context.Context, timeout time.Durat
 		ctxIngest, cancelIngest = context.WithTimeout(ctx, timeout+timeoutMonitoringOffset)
 	}
 
+	// address = sonobuoy-aggregator:8080
 	if err := p.Run(client, address, cert, aggregatorPod, progressPort, pluginResultDir); err != nil {
 		err := errors.Wrapf(err, "error running plugin %v", p.GetName())
 		logrus.Error(err)

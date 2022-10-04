@@ -142,6 +142,7 @@ func (p *Plugin) createPodDefinition(hostname string, cert *tls.Certificate, own
 
 // Run dispatches worker pods according to the Job's configuration.
 func (p *Plugin) Run(kubeclient kubernetes.Interface, hostname string, cert *tls.Certificate, ownerPod *v1.Pod, progressPort, resultDir string) error {
+	// hostname = sonobuoy-aggregator:8080
 	job := p.createPodDefinition(fmt.Sprintf("https://%s", hostname), cert, ownerPod, progressPort, resultDir)
 
 	secret, err := p.MakeTLSSecret(cert, ownerPod)
