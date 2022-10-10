@@ -63,6 +63,8 @@ const (
 	sonobuoyProgressPortKey     = "SONOBUOY_PROGRESS_PORT"
 
 	sonobuoyDefaultConfigDir = "/tmp/sonobuoy/config"
+
+	sonobuoySvcName = "sonobuoy-aggregator"
 )
 
 var (
@@ -355,8 +357,8 @@ func generateAggregatorAndService(w io.Writer, cfg *GenConfig) error {
 				},
 				Env: []corev1.EnvVar{
 					{
-						Name:      "SONOBUOY_ADVERTISE_IP",
-						ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{FieldPath: "status.podIP"}},
+						Name:  "SONOBUOY_AGGREGATOR_SERVICE_NAME",
+						Value: sonobuoySvcName,
 					},
 				},
 				Resources: corev1.ResourceRequirements{
@@ -429,7 +431,7 @@ func generateAggregatorAndService(w io.Writer, cfg *GenConfig) error {
 		},
 	}
 	ser.SetGroupVersionKind(schema.GroupVersionKind{Group: "", Version: "v1", Kind: "Service"})
-	ser.Name = "sonobuoy-aggregator"
+	ser.Name = sonobuoySvcName
 	ser.Namespace = cfg.Config.Namespace
 	ser.Labels = map[string]string{
 		"component":          "sonobuoy",
