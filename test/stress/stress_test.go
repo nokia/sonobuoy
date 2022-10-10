@@ -1,6 +1,3 @@
-//go:build stress
-// +build stress
-
 /*
 Copyright 2018 Heptio Inc.
 
