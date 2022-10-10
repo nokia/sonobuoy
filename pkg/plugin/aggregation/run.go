@@ -113,7 +113,7 @@ func Run(client kubernetes.Interface, plugins []plugin.Interface, cfg plugin.Agg
 	}()
 
 	// AdvertiseAddress often has a port, split this off if so
-	advertiseAddress := cfg.AdvertiseAddress // sonobuoy-aggregator:8080
+	advertiseAddress := cfg.AdvertiseAddress
 	if host, _, err := net.SplitHostPort(cfg.AdvertiseAddress); err == nil {
 		advertiseAddress = host
 	}
