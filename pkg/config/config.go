@@ -145,7 +145,6 @@ type Config struct {
 	// Sonobuoy configuration
 	///////////////////////////////////////////////
 	WorkerImage            string            `json:"WorkerImage" mapstructure:"WorkerImage"`
-	IstioWaitImage         string            `json:"IstioWaitImage" mapstructure:"IstioWaitImage"`
 	ImagePullPolicy        string            `json:"ImagePullPolicy" mapstructure:"ImagePullPolicy"`
 	ForceImagePullPolicy   bool              `json:"ForceImagePullPolicy,omitempty" mapstructure:"ForceImagePullPolicy"`
 	ImagePullSecrets       string            `json:"ImagePullSecrets" mapstructure:"ImagePullSecrets"`

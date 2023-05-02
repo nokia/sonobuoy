@@ -100,9 +100,7 @@ type GenConfig struct {
 	// and env vars.
 	KubeVersion string
 
-	IstioEnabled   bool
-	IstioPort      int
-	IstioWaitImage string
+	IstioEnabled bool
 }
 
 // Validate checks the config to determine if it is valid.

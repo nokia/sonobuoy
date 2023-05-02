@@ -398,18 +398,9 @@ func generateAggregatorAndService(w io.Writer, cfg *GenConfig) error {
 		p.ObjectMeta.Annotations = cfg.Config.CustomAnnotations
 	}
 	if cfg.IstioEnabled {
-		p.Spec.InitContainers = []corev1.Container{
-			{
-				Name: "istio-wait",
-				Command: []string{
-					"sh",
-					"-c",
-					fmt.Sprintf("for i in {1..30}; do if curl -sSf http://localhost:%v/ready; then exit 0; fi; sleep 1; done; exit 1", cfg.IstioPort),
-				},
-				Image:           cfg.Config.IstioWaitImage,
-				ImagePullPolicy: corev1.PullPolicy(cfg.ImagePullPolicy),
-			},
-		}
+		annotations := make(map[string]string)
+		annotations["proxy.istio.io/config"] = `{"holdApplicationUntilProxyStarts": true}`
+		p.Annotations = annotations
 	}
 
 	switch cfg.Config.SecurityContextMode {

@@ -70,9 +70,7 @@ type genFlags struct {
 
 	pluginTransforms map[string][]func(*manifest.Manifest) error
 
-	istioEnabled   bool
-	istioPort      int
-	istioWaitImage string
+	istioEnabled bool
 }
 
 func GenFlagSet(cfg *genFlags, rbac RBACMode) *pflag.FlagSet {
@@ -113,8 +111,6 @@ func GenFlagSet(cfg *genFlags, rbac RBACMode) *pflag.FlagSet {
 
 	AddSkipPreflightFlag(&cfg.skipPreflight, genset)
 	AddIstioEnabledFlag(&cfg.istioEnabled, genset)
-	AddIstioPortFlag(&cfg.istioPort, genset)
-	AddIstioWaitImageFlag(&cfg.istioWaitImage, genset)
 	AddRunWaitFlag(&cfg.wait, genset)
 	if features.Enabled(features.WaitOutputProgressByDefault) {
 		AddWaitOutputFlag(&cfg.waitOutput, genset, ProgressOutputMode)

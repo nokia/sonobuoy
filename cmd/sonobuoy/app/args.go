@@ -315,20 +315,6 @@ func AddIstioEnabledFlag(flag *bool, flags *pflag.FlagSet) {
 	)
 }
 
-func AddIstioPortFlag(flag *int, flags *pflag.FlagSet) {
-	flags.IntVar(
-		flag, "istio-port", 15020,
-		"Set the istio port for checking istio proxy readiness. Defaults to 15020.",
-	)
-}
-
-func AddIstioWaitImageFlag(flag *string, flags *pflag.FlagSet) {
-	flags.StringVar(
-		flag, "istio-wait-image", "curlimages/curl:latest",
-		"Set the image for init container to wait for istio proxy readiness. Defaults to curlimages/curl:latest",
-	)
-}
-
 // AddDeleteAllFlag adds a boolean flag for deleting everything (including E2E tests).
 func AddDeleteAllFlag(flag *bool, flags *pflag.FlagSet) {
 	flags.BoolVar(
