@@ -181,8 +181,6 @@ func (g *genFlags) Config() (*client.GenConfig, error) {
 		KubeVersion:        k8sVersion,
 		PluginTransforms:   g.pluginTransforms,
 		IstioEnabled:       g.istioEnabled,
-		IstioPort:          g.istioPort,
-		IstioWaitImage:     g.istioWaitImage,
 	}, nil
 }
 
