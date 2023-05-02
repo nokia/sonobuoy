@@ -311,7 +311,7 @@ func AddSkipPreflightFlag(flag *bool, flags *pflag.FlagSet) {
 func AddIstioEnabledFlag(flag *bool, flags *pflag.FlagSet) {
 	flags.BoolVar(
 		flag, "istio-enabled", false,
-		"If true, launch aggregator with wait time for istio proxy to become ready. Defaults to false.",
+		"If true, Add annotations to aggregator to hold applications until istio proxy starts.",
 	)
 }
 
