@@ -308,6 +308,27 @@ func AddSkipPreflightFlag(flag *bool, flags *pflag.FlagSet) {
 	)
 }
 
+func AddIstioEnabledFlag(flag *bool, flags *pflag.FlagSet) {
+	flags.BoolVar(
+		flag, "istio-enabled", false,
+		"If true, launch aggregator with wait time for istio proxy to become ready.",
+	)
+}
+
+func AddIstioPortFlag(flag *int, flags *pflag.FlagSet) {
+	flags.IntVar(
+		flag, "istio-port", 15020,
+		"Set the istio port for checking istio proxy readiness. Must be set if istio-enabled set to true",
+	)
+}
+
+func AddIstioWaitImageFlag(flag *string, flags *pflag.FlagSet) {
+	flags.StringVar(
+		flag, "istio-wait-image", "curlimages/curl:latest",
+		"Set the image for init container to wait for istio proxy readiness. Must be set if istio-enabled set to true",
+	)
+}
+
 // AddDeleteAllFlag adds a boolean flag for deleting everything (including E2E tests).
 func AddDeleteAllFlag(flag *bool, flags *pflag.FlagSet) {
 	flags.BoolVar(

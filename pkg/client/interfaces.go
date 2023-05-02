@@ -99,6 +99,10 @@ type GenConfig struct {
 	// The version of Kubernetes to assume. Used to surface for plugin images
 	// and env vars.
 	KubeVersion string
+
+	IstioEnabled   bool
+	IstioPort      int
+	IstioWaitImage string
 }
 
 // Validate checks the config to determine if it is valid.

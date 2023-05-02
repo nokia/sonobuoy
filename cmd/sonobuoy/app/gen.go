@@ -69,6 +69,10 @@ type genFlags struct {
 	nodeSelectors NodeSelectors
 
 	pluginTransforms map[string][]func(*manifest.Manifest) error
+
+	istioEnabled   bool
+	istioPort      int
+	istioWaitImage string
 }
 
 func GenFlagSet(cfg *genFlags, rbac RBACMode) *pflag.FlagSet {
@@ -108,6 +112,9 @@ func GenFlagSet(cfg *genFlags, rbac RBACMode) *pflag.FlagSet {
 	AddSecurityContextMode(&cfg.sonobuoyConfig.SecurityContextMode, genset)
 
 	AddSkipPreflightFlag(&cfg.skipPreflight, genset)
+	AddIstioEnabledFlag(&cfg.istioEnabled, genset)
+	AddIstioPortFlag(&cfg.istioPort, genset)
+	AddIstioWaitImageFlag(&cfg.istioWaitImage, genset)
 	AddRunWaitFlag(&cfg.wait, genset)
 	if features.Enabled(features.WaitOutputProgressByDefault) {
 		AddWaitOutputFlag(&cfg.waitOutput, genset, ProgressOutputMode)
@@ -177,6 +184,9 @@ func (g *genFlags) Config() (*client.GenConfig, error) {
 		NodeSelectors:      g.nodeSelectors,
 		KubeVersion:        k8sVersion,
 		PluginTransforms:   g.pluginTransforms,
+		IstioEnabled:       g.istioEnabled,
+		IstioPort:          g.istioPort,
+		IstioWaitImage:     g.istioWaitImage,
 	}, nil
 }
 
