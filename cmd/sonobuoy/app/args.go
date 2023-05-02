@@ -311,21 +311,21 @@ func AddSkipPreflightFlag(flag *bool, flags *pflag.FlagSet) {
 func AddIstioEnabledFlag(flag *bool, flags *pflag.FlagSet) {
 	flags.BoolVar(
 		flag, "istio-enabled", false,
-		"If true, launch aggregator with wait time for istio proxy to become ready.",
+		"If true, launch aggregator with wait time for istio proxy to become ready. Defaults to false.",
 	)
 }
 
 func AddIstioPortFlag(flag *int, flags *pflag.FlagSet) {
 	flags.IntVar(
 		flag, "istio-port", 15020,
-		"Set the istio port for checking istio proxy readiness. Must be set if istio-enabled set to true",
+		"Set the istio port for checking istio proxy readiness. Defaults to 15020.",
 	)
 }
 
 func AddIstioWaitImageFlag(flag *string, flags *pflag.FlagSet) {
 	flags.StringVar(
 		flag, "istio-wait-image", "curlimages/curl:latest",
-		"Set the image for init container to wait for istio proxy readiness. Must be set if istio-enabled set to true",
+		"Set the image for init container to wait for istio proxy readiness. Defaults to curlimages/curl:latest",
 	)
 }
 
